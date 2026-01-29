@@ -5,5 +5,7 @@ module edu.pmoc.practicatrim.hangmanpsp {
 
     opens edu.pmoc.practicatrim.hangmanpsp to javafx.fxml;
     exports edu.pmoc.practicatrim.hangmanpsp;
+    exports edu.pmoc.practicatrim.hangmanpsp.controller;
+    opens edu.pmoc.practicatrim.hangmanpsp.controller to javafx.fxml;
 
 }
