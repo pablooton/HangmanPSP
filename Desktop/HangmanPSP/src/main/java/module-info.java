@@ -2,6 +2,7 @@ module edu.pmoc.practicatrim.hangmanpsp {
     requires javafx.controls;
     requires javafx.fxml;
     requires jakarta.persistence;
+    requires org.hibernate.orm.core;
 
 
     opens edu.pmoc.practicatrim.hangmanpsp to javafx.fxml;
