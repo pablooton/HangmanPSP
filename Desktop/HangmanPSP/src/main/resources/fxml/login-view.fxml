@@ -16,11 +16,11 @@
          <Font size="10.0" />
       </font>
    </Label>
-    <Button onAction="#onPlayButtonClick" text="JUGADOR 1" textAlignment="JUSTIFY">
+    <Button fx:id ="button1" onAction="#onPlayButtonClick" text="JUGADOR 1" textAlignment="JUSTIFY">
       <font>
          <Font size="10.0" />
       </font></Button>
-   <Button onAction="#onPlayButtonClick" text="JUGADOR 2" textAlignment="JUSTIFY">
+   <Button fx:id= "button2" onAction="#onPlayButtonClick" text="JUGADOR 2" textAlignment="JUSTIFY">
       <font>
          <Font size="10.0" />
       </font>

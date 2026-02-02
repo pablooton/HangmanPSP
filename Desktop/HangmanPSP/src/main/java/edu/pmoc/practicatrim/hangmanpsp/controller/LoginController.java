@@ -12,9 +12,11 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class LoginController {
+    public Button button1;
+    public Button button2;
     private UsuarioDao usuarioDao ;
     @FXML
     public void onPlayButtonClick(ActionEvent actionEvent) {
-
+        
     }
 }

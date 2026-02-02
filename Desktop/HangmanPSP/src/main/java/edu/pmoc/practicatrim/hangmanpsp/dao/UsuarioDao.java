@@ -1,26 +1,25 @@
 package edu.pmoc.practicatrim.hangmanpsp.dao;
 
 import edu.pmoc.practicatrim.hangmanpsp.model.Jugador;
+import edu.pmoc.practicatrim.hangmanpsp.util.CryptoUtil;
 import edu.pmoc.practicatrim.hangmanpsp.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
-import java.sql.Connection;
-import java.util.List;
-
 public class UsuarioDao {
-    public Jugador cargarrUser(String username){
+    public Jugador cargarUser(String username){
+        String nombreCifrado = CryptoUtil.encrypt(username);
         try(Session session = HibernateUtil.getSessionFactory().openSession()) {
             String hql = "Select j from jugador j where j.nombre = :nombre";
             Query<Jugador> query = session.createQuery(hql, Jugador.class);
-            query.setParameter("nombre",username);
+            query.setParameter("nombre",nombreCifrado);
             Jugador jugador = query.uniqueResult();
 
             if(jugador == null){
                 Transaction tx = session.beginTransaction();
                 jugador = new Jugador();
-                jugador.setNombre(username);
+                jugador.setNombre(nombreCifrado);
                 session.persist(jugador);
                 tx.commit();
             }
