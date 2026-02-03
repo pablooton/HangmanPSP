@@ -11,7 +11,7 @@ public class UsuarioDao {
     public Jugador cargarUser(String username){
         String nombreCifrado = CryptoUtil.encrypt(username);
         try(Session session = HibernateUtil.getSessionFactory().openSession()) {
-            String hql = "Select j from jugador j where j.nombre = :nombre";
+            String hql = "Select j from Jugador j where j.nombre = :nombre";
             Query<Jugador> query = session.createQuery(hql, Jugador.class);
             query.setParameter("nombre",nombreCifrado);
             Jugador jugador = query.uniqueResult();

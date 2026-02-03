@@ -6,23 +6,41 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.pmoc.practicatrim.hangmanpsp.controller.LoginController">
+<VBox alignment="CENTER" spacing="50.0" prefWidth="500.0" prefHeight="600.0"
+      style="-fx-background-color: white; -fx-border-color: black; -fx-border-width: 4;"
+      xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="edu.pmoc.practicatrim.hangmanpsp.controller.LoginController">
     <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+        <Insets bottom="60.0" left="60.0" right="60.0" top="60.0" />
     </padding>
-   <Label alignment="CENTER" text="HANGSMAN" />
-   <Label text="ESCOJA SU JUGADOR">
-      <font>
-         <Font size="10.0" />
-      </font>
-   </Label>
-    <Button fx:id ="button1" onAction="#onPlayButtonClick" text="JUGADOR 1" textAlignment="JUSTIFY">
-      <font>
-         <Font size="10.0" />
-      </font></Button>
-   <Button fx:id= "button2" onAction="#onPlayButtonClick" text="JUGADOR 2" textAlignment="JUSTIFY">
-      <font>
-         <Font size="10.0" />
-      </font>
-   </Button>
+
+    <Label text="A H O R C A D O" textFill="BLACK">
+        <font>
+            <Font name="System Bold" size="48.0" />
+        </font>
+    </Label>
+
+    <VBox spacing="25.0" alignment="CENTER" maxWidth="350.0">
+        <Button fx:id="btnJugador1" onAction="#handleLogin" text="JUGADOR 1"
+                maxWidth="Infinity" minHeight="90.0"
+                style="-fx-background-color: black; -fx-text-fill: white; -fx-background-radius: 0; -fx-cursor: hand;">
+            <font>
+                <Font name="System Bold" size="24.0" />
+            </font>
+        </Button>
+
+        <Button fx:id="btnJugador2" onAction="#handleLogin" text="JUGADOR 2"
+                maxWidth="Infinity" minHeight="90.0"
+                style="-fx-background-color: white; -fx-text-fill: black; -fx-border-color: black; -fx-border-width: 3; -fx-background-radius: 0; -fx-cursor: hand;">
+            <font>
+                <Font name="System Bold" size="24.0" />
+            </font>
+        </Button>
+    </VBox>
+
+    <Label text="CONEXIÓN SEGURA SSL/TLS" textFill="#555555">
+        <font>
+            <Font name="System Italic" size="12.0" />
+        </font>
+    </Label>
 </VBox>

@@ -2,6 +2,7 @@ package edu.pmoc.practicatrim.hangmanpsp.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -13,9 +14,8 @@ public class Partida {
     @ManyToOne
     @JoinColumn(name = "jugador_id")
     private Jugador jugador;
-    @Column(name = "fecha_hora", insertable = false, updatable = false)
-    @Temporal(TemporalType.TIMESTAMP)
-    private java.util.Date fechaHora;
+    @Column(name = "fecha_partida")
+    private LocalDateTime fechaHora = LocalDateTime.now();
     @Column(name = "acertado")
     private boolean acertado;
     @Column(name = "puntuacion_obtenida")
@@ -39,12 +39,13 @@ public class Partida {
         this.jugador = jugador;
     }
 
-    public Date getFechaHora() {
+    public LocalDateTime getFechaHora() {
         return fechaHora;
     }
 
-    public void setFechaHora(Date fechaHora) {
+    public Partida setFechaHora(LocalDateTime fechaHora) {
         this.fechaHora = fechaHora;
+        return this;
     }
 
     public boolean isAcertado() {

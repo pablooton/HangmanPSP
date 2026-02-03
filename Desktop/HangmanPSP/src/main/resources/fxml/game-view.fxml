@@ -20,9 +20,6 @@
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <ImageView fx:id="imagenAhorcado" fitHeight="200.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
-    </ImageView>
-
     <Label fx:id="lblPalabra" text="_ _ _ _ _ _ _" style="-fx-font-size: 36px; -fx-font-weight: bold; -fx-letter-spacing: 5px;"/>
 
     <TilePane fx:id="panelLetras" alignment="CENTER" hgap="8.0" vgap="8.0" prefColumns="7" prefWidth="450.0" style="-fx-padding: 10;">
