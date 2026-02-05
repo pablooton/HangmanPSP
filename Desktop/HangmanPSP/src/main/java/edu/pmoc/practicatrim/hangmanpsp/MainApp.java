@@ -1,5 +1,7 @@
 package edu.pmoc.practicatrim.hangmanpsp;
 
+import edu.pmoc.practicatrim.hangmanpsp.util.AppShell;
+import edu.pmoc.practicatrim.hangmanpsp.util.View;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -10,10 +12,10 @@ import java.io.IOException;
 public class MainApp extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(MainApp.class.getResource("/fxml/login-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 500, 340);
-        stage.setTitle("Hello!");
-        stage.setScene(scene);
+        AppShell.getInstance().init(stage);
+        AppShell.getInstance().loadView(View.LOGIN);
+
+        stage.setTitle("HANGMAN");
         stage.show();
     }
 
