@@ -8,11 +8,11 @@
         <property name="connection.url">jdbc:mysql://localhost:3306/hangman_db?serverTimezone=UTC</property>
         <property name="connection.username">root</property>
         <property name="connection.password"></property>
-        <property name="dialect">org.hibernate.dialect.MySQL8Dialect</property>
+        <property name="dialect">org.hibernate.dialect.MySQLDialect</property>
 
         <property name="show_sql">true</property>
         <property name="format_sql">true</property>
-        <property name="hbm2ddl.auto">update</property>
+        <property name="hbm2ddl.auto">create</property>
 
         <mapping class="edu.pmoc.practicatrim.hangmanpsp.model.Jugador"/>
         <mapping class="edu.pmoc.practicatrim.hangmanpsp.model.Partida"/>

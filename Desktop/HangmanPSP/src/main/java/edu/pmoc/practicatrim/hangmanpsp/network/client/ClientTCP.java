@@ -13,8 +13,16 @@ public class ClientTCP {
     private ObjectInputStream in;
 
     public void conectar() {
-        System.setProperty("javax.net.ssl.trustStore", ConfigLoader.getProperty("ssl.truststore.path"));
-        System.setProperty("javax.net.ssl.trustStorePassword", ConfigLoader.getProperty("ssl.truststore.pass"));
+        String trustStorePath = ConfigLoader.getProperty("ssl.truststore.path");
+        String trustStorePass = ConfigLoader.getProperty("ssl.truststore.pass");
+
+        if (trustStorePath == null || trustStorePass == null) {
+            System.err.println("ERROR: No se han configurado las propiedades del TrustStore en config.properties");
+            return;
+        }
+
+        System.setProperty("javax.net.ssl.trustStore", trustStorePath);
+        System.setProperty("javax.net.ssl.trustStorePassword", trustStorePass);
 
         try {
             String host = ConfigLoader.getProperty("server.host");

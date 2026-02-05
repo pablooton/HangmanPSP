@@ -7,10 +7,14 @@ import edu.pmoc.practicatrim.hangmanpsp.util.AppShell;
 import edu.pmoc.practicatrim.hangmanpsp.util.View;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 
+import java.net.URL;
+import java.util.ResourceBundle;
 
-public class LoginController {
+
+public class LoginController implements Initializable {
 
     public Button btnJugador1;
     public Button btnJugador2;
@@ -27,12 +31,17 @@ public class LoginController {
             ClientTCP cliente = new ClientTCP();
             cliente.conectar();
             // Navegacion
-            GameController gameController = (GameController) AppShell.getInstance().loadView(View.GAME);
+            AppShell.getInstance().loadView(View.GAME);
 
 
         } catch (Exception e) {
             System.err.println("Error en el proceso de Login: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        this.usuarioDao = new UsuarioDao();
     }
 }
