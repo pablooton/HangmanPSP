@@ -5,8 +5,13 @@ import edu.pmoc.practicatrim.hangmanpsp.model.Palabra;
 import edu.pmoc.practicatrim.hangmanpsp.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -24,8 +29,9 @@ public class PalabraDao {
 
                 Gson gson = new Gson();
 
-                try (Reader reader = Files.newBufferedReader(Paths.get("palabras-ahorcado.json"))) {
-
+                try (InputStream is = PalabraDao.class.getClassLoader().getResourceAsStream("palabras-ahorcado.json")) {
+                    if (is == null) throw new IOException("Archivo no encontrado en resources");
+                    Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
 
                     Palabra[] palabrasArray = gson.fromJson(reader, Palabra[].class);
 
@@ -43,4 +49,17 @@ public class PalabraDao {
             System.err.println("Error al importar palabras: " + e.getMessage());
         }
     }
+    public static String getPalabraSecreta() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            String hql = "SELECT p.palabra FROM Palabra p ORDER BY RAND()";
+            Query<String> query = session.createQuery(hql, String.class);
+            query.setMaxResults(1);
+
+            return query.uniqueResult();
+        } catch (Exception e) {
+            System.err.println("Error al obtener la palabra secreta: " + e.getMessage());
+            return "HIBERNATE"; // Chicos hay que poner una palabra por defecto en caso de error
+        }
+    }
+
 }
