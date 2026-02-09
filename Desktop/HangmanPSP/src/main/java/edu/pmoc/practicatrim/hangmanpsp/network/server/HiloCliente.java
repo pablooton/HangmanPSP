@@ -35,9 +35,20 @@ public class HiloCliente implements Runnable {
             while (partida.isActiva()) {
                 enviarEstado(false, null);
 
+                synchronized (partida) {
+                    while (partida.getTurnoActual() != idPropio && partida.isActiva()) {
+                        partida.wait();
+                        enviarEstado(false, null);
+                    }
+                }
+
+                if (!partida.isActiva()) break;
                 try {
                     Object msg = in.readObject();
                     procesarMensaje(msg);
+                    synchronized (partida) {
+                        partida.notifyAll();
+                    }
                 } catch (SocketException se) {
                     break;
                 }
@@ -47,6 +58,7 @@ public class HiloCliente implements Runnable {
         } catch (Exception e) {
             System.err.println("[SERVIDOR] Error en hilo " + idPropio + ": " + e.getMessage());
             partida.cancelarPartida();
+            synchronized (partida) { partida.notifyAll(); } // Despertar a otros por si acaso
         } finally {
             desconectar();
         }
@@ -63,9 +75,7 @@ public class HiloCliente implements Runnable {
             partida.cancelarPartida();
         }
         else if (msg instanceof Character) {
-            if (partida.getTurnoActual() == idPropio) {
-                partida.procesarJugada(idPropio, (Character) msg);
-            }
+            partida.procesarJugada(idPropio, (Character) msg);
         }
     }
 
@@ -85,7 +95,7 @@ public class HiloCliente implements Runnable {
 
     private void finalizarJuego(Jugador j) throws IOException {
         boolean ganado = !partida.getProgreso().contains("_");
-        if (ganado && !partida.isCancelada() && partida.getTurnoActual() == idPropio) {
+        if (ganado && !partida.isCancelada()) {
             int puntos = partida.calcularPuntos();
             Partida p = new Partida();
             p.setJugador(j);
