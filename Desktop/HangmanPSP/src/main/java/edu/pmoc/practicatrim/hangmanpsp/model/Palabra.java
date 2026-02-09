@@ -11,8 +11,8 @@ public class Palabra {
     @Id
     @Column(name = "id")
     public int id;
-    @Column(name = "palabra", length = 15, nullable = false)
-    public String palabra;
+    @Column(name = "palabra", columnDefinition = "TEXT")
+    private String palabra;
 
     public Palabra() {}
 

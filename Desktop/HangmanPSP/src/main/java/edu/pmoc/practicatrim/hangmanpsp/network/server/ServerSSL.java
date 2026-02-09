@@ -4,68 +4,43 @@ import edu.pmoc.practicatrim.hangmanpsp.dao.PalabraDao;
 import edu.pmoc.practicatrim.hangmanpsp.util.ConfigLoader;
 import javax.net.ssl.*;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ServerSSL {
+    public void iniciar() {
+        try {
+            PalabraDao.importarDesdeJson();
+            SSLContext sc = crearContextoSSL();
+            SSLServerSocket serverSocket = (SSLServerSocket) sc.getServerSocketFactory().createServerSocket(ConfigLoader.getIntProperty("server.port"));
+            System.out.println("[SERVIDOR] Listo.");
+
+            while (true) {
+                List<SSLSocket> clientes = new ArrayList<>();
+                SSLSocket s1 = (SSLSocket) serverSocket.accept();
+                clientes.add(s1);
+                serverSocket.setSoTimeout(10000);
+                try { clientes.add((SSLSocket) serverSocket.accept()); } catch (Exception e) {}
+                serverSocket.setSoTimeout(0);
+
+                LogicaPartida logica = new LogicaPartida(PalabraDao.getPalabraSecreta(), clientes.size());
+                for (int i = 0; i < clientes.size(); i++) {
+                    new Thread(new HiloCliente(clientes.get(i), i, logica)).start();
+                }
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+    }
 
     private SSLContext crearContextoSSL() throws Exception {
-        String path = ConfigLoader.getProperty("ssl.keystore.path");
-        String pass = ConfigLoader.getProperty("ssl.keystore.pass");
-
         KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(path), pass.toCharArray());
-
+        ks.load(new FileInputStream(ConfigLoader.getProperty("ssl.keystore.path")), ConfigLoader.getProperty("ssl.keystore.pass").toCharArray());
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(ks, pass.toCharArray());
-
+        kmf.init(ks, ConfigLoader.getProperty("ssl.keystore.pass").toCharArray());
         SSLContext sc = SSLContext.getInstance("TLS");
         sc.init(kmf.getKeyManagers(), null, null);
         return sc;
     }
 
-    public void iniciar() {
-        int puerto = ConfigLoader.getIntProperty("server.port");
-
-        try {
-            SSLContext context = crearContextoSSL();
-            SSLServerSocketFactory ssf = context.getServerSocketFactory();
-
-            try (SSLServerSocket serverSocket = (SSLServerSocket) ssf.createServerSocket(puerto)) {
-                System.out.println("[SERVIDOR] Listo.");
-
-                while (true) {
-                    List<SSLSocket> clientesEnPartida = new ArrayList<>();
-                    SSLSocket s1 = (SSLSocket) serverSocket.accept();
-                    clientesEnPartida.add(s1);
-
-                    serverSocket.setSoTimeout(10000);
-                    try {
-                        SSLSocket s2 = (SSLSocket) serverSocket.accept();
-                        clientesEnPartida.add(s2);
-                    } catch (IOException e) {
-                        System.out.println("[SERVIDOR] Individual.");
-                    }
-                    serverSocket.setSoTimeout(0);
-
-                    String palabra = PalabraDao.getPalabraSecreta();
-                    if (palabra == null) palabra = "AHORCADO";
-
-                    LogicaPartida logica = new LogicaPartida(palabra, clientesEnPartida.size());
-
-                    for (int i = 0; i < clientesEnPartida.size(); i++) {
-                        new Thread(new HiloCliente(clientesEnPartida.get(i), i, logica)).start();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args) {
-        new ServerSSL().iniciar();
-    }
+    public static void main(String[] args) { new ServerSSL().iniciar(); }
 }

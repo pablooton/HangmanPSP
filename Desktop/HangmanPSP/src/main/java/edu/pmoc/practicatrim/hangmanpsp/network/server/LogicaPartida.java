@@ -1,100 +1,64 @@
 package edu.pmoc.practicatrim.hangmanpsp.network.server;
 
-import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LogicaPartida {
     private String palabraSecreta;
-    private char[] progreso;
+    private String progreso;
+    private int turnoActual = 0;
     private int numJugadores;
-    private int turnoActual;
-    private int[] vidas = {6, 6};
     private boolean activa = true;
-    private boolean cancelada = false;
+    private Map<Integer, Integer> vidasJugadores = new HashMap<>();
 
     public LogicaPartida(String palabra, int numJugadores) {
-        this.palabraSecreta = palabra.toUpperCase();
         this.numJugadores = numJugadores;
-        this.progreso = new char[palabra.length()];
-        for (int i = 0; i < progreso.length; i++) progreso[i] = '_';
-
-        this.turnoActual = (numJugadores == 2) ? new Random().nextInt(2) : 0;
-
-        System.out.println("[SERVIDOR] Partida creada. Palabra: " + palabraSecreta + " | Jugadores: " + numJugadores);
+        iniciarNuevaRonda(palabra);
     }
 
-    public synchronized void procesarJugada(int idJugador, char letra) {
-        if (idJugador != turnoActual || !activa) return;
+    public synchronized void iniciarNuevaRonda(String nuevaPalabra) {
+        this.palabraSecreta = nuevaPalabra.toUpperCase();
+        this.progreso = "_".repeat(palabraSecreta.length());
+        for (int i = 0; i < numJugadores; i++) {
+            vidasJugadores.put(i, 6);
+        }
+        this.activa = true;
+    }
 
+    public synchronized void cancelarPartida() {
+        this.activa = false;
+    }
+
+    public synchronized void procesarJugada(int id, char letra) {
+        if (id != turnoActual || !activa) return;
+
+        letra = Character.toUpperCase(letra);
         boolean acierto = false;
-        char letraMayus = Character.toUpperCase(letra);
+        StringBuilder nuevoProgreso = new StringBuilder(progreso);
 
         for (int i = 0; i < palabraSecreta.length(); i++) {
-            if (palabraSecreta.charAt(i) == letraMayus) {
-                progreso[i] = letraMayus;
+            if (palabraSecreta.charAt(i) == letra) {
+                nuevoProgreso.setCharAt(i, letra);
                 acierto = true;
             }
         }
 
-        if (!acierto) {
-            vidas[idJugador]--;
-            System.out.println("[SERVIDOR] Jugador " + idJugador + " falló. Letra: " + letraMayus + " | Vidas: " + vidas[idJugador]);
-            if (numJugadores == 2) {
-                cambiarTurno();
-            }
+        if (acierto) {
+            progreso = nuevoProgreso.toString();
         } else {
-            System.out.println("[SERVIDOR] Jugador " + idJugador + " acertó. Letra: " + letraMayus);
-        }
+            int v = vidasJugadores.get(id) - 1;
+            vidasJugadores.put(id, v);
 
-        verificarFinal();
-        notifyAll();
-    }
-
-    private void cambiarTurno() {
-        int siguiente = (turnoActual == 0) ? 1 : 0;
-        if (vidas[siguiente] > 0) {
-            turnoActual = siguiente;
-            System.out.println("[SERVIDOR] Cambio de turno. Ahora le toca al Jugador " + turnoActual);
-        }
-    }
-
-    private void verificarFinal() {
-        boolean palabraCompleta = !String.valueOf(progreso).contains("_");
-
-        boolean todosSinVidas = true;
-        for (int i = 0; i < numJugadores; i++) {
-            if (vidas[i] > 0) {
-                todosSinVidas = false;
-                break;
+            if (v <= 0) {
+                activa = false;
+            } else if (numJugadores == 2) {
+                this.turnoActual = (this.turnoActual == 0) ? 1 : 0;
             }
         }
-
-        if (palabraCompleta || todosSinVidas || cancelada) {
-            this.activa = false;
-            if (palabraCompleta) System.out.println("[SERVIDOR] Fin: ¡Palabra adivinada!");
-            if (todosSinVidas) System.out.println("[SERVIDOR] Fin: Jugadores sin vidas.");
-        }
     }
 
-    public synchronized void cancelarPartida() {
-        this.cancelada = true;
-        this.activa = false;
-        System.out.println("[SERVIDOR] Un jugador ha pulsado CANCELAR. Partida anulada.");
-        notifyAll();
-    }
-
-    public int calcularPuntos() {
-        return (palabraSecreta.length() >= 10) ? 2 : 1;
-    }
-
-    public synchronized boolean isActiva() { return activa; }
-
-    public synchronized boolean isCancelada() { return cancelada; }
-
-    public synchronized String getProgreso() { return String.valueOf(progreso); }
-
-    public synchronized int getTurnoActual() { return turnoActual; }
-
-    public synchronized int getVidas(int id) { return vidas[id]; }
-
-    public String getPalabraSecreta() { return palabraSecreta; }
+    public String getProgreso() { return progreso; }
+    public int getVidas(int id) { return vidasJugadores.getOrDefault(id, 0); }
+    public int getTurnoActual() { return turnoActual; }
+    public boolean isActiva() { return activa; }
 }

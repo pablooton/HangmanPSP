@@ -58,18 +58,32 @@ public class GameController {
                         this.miTurno = estado.isEsTuTurno();
 
                         Platform.runLater(() -> {
-                            lblPalabra.setText(estado.getProgreso().replace("", " ").trim());
+                            String nuevoProgreso = estado.getProgreso().replace("", " ").trim();
+                            String progresoAnterior = lblPalabra.getText().replace(" ", "");
+                            String progresoNuevoSinEspacios = estado.getProgreso();
+
+                            if (!progresoAnterior.isEmpty() &&
+                                    !progresoAnterior.contains("_") &&
+                                    progresoNuevoSinEspacios.contains("_")) {
+
+                                panelLetras.getChildren().forEach(node -> node.setDisable(false));
+                                agregarLog("SISTEMA", "¡Palabra acertada! Cargando siguiente ronda...");
+                            }
+
+                            lblPalabra.setText(nuevoProgreso);
                             lblVidas.setText(String.valueOf(estado.getVidas()));
-                            panelLetras.setDisable(!estado.isEsTuTurno());
 
                             if (estado.isJuegoTerminado()) {
-                                agregarLog("SISTEMA", "Partida finalizada: " + estado.getMensaje());
                                 panelLetras.setDisable(true);
+                                agregarLog("SISTEMA", "Partida finalizada: " + estado.getMensaje());
                             } else {
+                                panelLetras.setDisable(!estado.isEsTuTurno());
+
+
                                 if (estado.isEsTuTurno()) {
-                                    agregarLog("SISTEMA", "Es tu turno. Elige una letra o consulta puntuación.");
+                                    agregarLog("SISTEMA", "¡Es tu turno! Elige una letra.");
                                 } else {
-                                    agregarLog("SISTEMA", "Turno del oponente...");
+                                    agregarLog("SISTEMA", "Esperando jugada del oponente...");
                                 }
                             }
                         });
@@ -79,6 +93,7 @@ public class GameController {
                 }
             } catch (Exception e) {
                 Platform.runLater(() -> agregarLog("SISTEMA", "Conexión perdida con el servidor."));
+                e.printStackTrace();
             }
         });
         thread.setDaemon(true);
@@ -90,9 +105,9 @@ public class GameController {
         if (!miTurno) return;
 
         Button boton = (Button) event.getSource();
-        String letra = boton.getText();
         boton.setDisable(true);
 
+        String letra = boton.getText();
         cliente.enviarDatos(letra.charAt(0));
     }
 
