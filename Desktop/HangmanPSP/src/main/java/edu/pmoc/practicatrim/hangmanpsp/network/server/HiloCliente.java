@@ -6,6 +6,7 @@ import edu.pmoc.practicatrim.hangmanpsp.model.Jugador;
 import edu.pmoc.practicatrim.hangmanpsp.model.Partida;
 import java.io.*;
 import javax.net.ssl.SSLSocket;
+import java.net.SocketException;
 
 public class HiloCliente implements Runnable {
     private SSLSocket socket;
@@ -13,6 +14,7 @@ public class HiloCliente implements Runnable {
     private LogicaPartida partida;
     private ObjectOutputStream out;
     private ObjectInputStream in;
+    private Jugador jugador;
 
     public HiloCliente(SSLSocket socket, int id, LogicaPartida partida) {
         this.socket = socket;
@@ -24,40 +26,51 @@ public class HiloCliente implements Runnable {
     public void run() {
         try {
             out = new ObjectOutputStream(socket.getOutputStream());
+            out.flush();
             in = new ObjectInputStream(socket.getInputStream());
 
-            Jugador jugador = (Jugador) in.readObject();
-            System.out.println("[CONSOLA] Jugador " + idPropio + " conectado: " + jugador.getNombre());
+            this.jugador = (Jugador) in.readObject();
+            System.out.println("[SERVIDOR] Jugador conectado: " + jugador.getNombre());
 
             while (partida.isActiva()) {
                 enviarEstado(false, null);
 
-                if (partida.getTurnoActual() == idPropio) {
+                try {
                     Object msg = in.readObject();
-                    if (msg instanceof Character) {
-                        partida.procesarJugada(idPropio, (Character) msg);
-                    } else if ("CANCELAR".equals(msg)) {
-                        partida.cancelarPartida();
-                    }
-                } else {
-                    synchronized (partida) {
-                        while (partida.getTurnoActual() != idPropio && partida.isActiva()) {
-                            partida.wait();
-                        }
-                    }
+                    procesarMensaje(msg);
+                } catch (SocketException se) {
+                    break;
                 }
             }
             finalizarJuego(jugador);
 
         } catch (Exception e) {
-            System.err.println("[CONSOLA] Error en hilo " + idPropio + ": " + e.getMessage());
+            System.err.println("[SERVIDOR] Error en hilo " + idPropio + ": " + e.getMessage());
             partida.cancelarPartida();
         } finally {
             desconectar();
         }
     }
 
+    private void procesarMensaje(Object msg) throws IOException {
+        if ("PUNTUACION".equals(msg)) {
+            Long puntos = new PartidaDAO().obtenerPuntuacionTotal(jugador.getId());
+            out.writeObject("PUNTUACION:" + puntos);
+            out.flush();
+            out.reset();
+        }
+        else if ("CANCELAR".equals(msg)) {
+            partida.cancelarPartida();
+        }
+        else if (msg instanceof Character) {
+            if (partida.getTurnoActual() == idPropio) {
+                partida.procesarJugada(idPropio, (Character) msg);
+            }
+        }
+    }
+
     private void enviarEstado(boolean terminado, String msgFinal) throws IOException {
+        if (socket.isClosed()) return;
         EstadoPartida estado = new EstadoPartida(
                 partida.getProgreso(),
                 partida.getVidas(idPropio),
@@ -65,7 +78,6 @@ public class HiloCliente implements Runnable {
                 terminado,
                 msgFinal
         );
-
         out.writeObject(estado);
         out.flush();
         out.reset();
@@ -73,7 +85,6 @@ public class HiloCliente implements Runnable {
 
     private void finalizarJuego(Jugador j) throws IOException {
         boolean ganado = !partida.getProgreso().contains("_");
-
         if (ganado && !partida.isCancelada() && partida.getTurnoActual() == idPropio) {
             int puntos = partida.calcularPuntos();
             Partida p = new Partida();
@@ -81,7 +92,6 @@ public class HiloCliente implements Runnable {
             p.setAcertado(true);
             p.setPuntuacionObtenida(puntos);
             p.setFechaHora(java.time.LocalDateTime.now());
-
             new PartidaDAO().guardarPartida(p);
         }
         enviarEstado(true, "FIN");
@@ -89,7 +99,7 @@ public class HiloCliente implements Runnable {
 
     private void desconectar() {
         try {
-            if (socket != null) socket.close();
-        } catch (IOException e) { e.printStackTrace(); }
+            if (socket != null && !socket.isClosed()) socket.close();
+        } catch (IOException e) { }
     }
 }

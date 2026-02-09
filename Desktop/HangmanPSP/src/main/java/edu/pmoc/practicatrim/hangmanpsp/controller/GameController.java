@@ -7,6 +7,7 @@ import edu.pmoc.practicatrim.hangmanpsp.util.AppShell;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
@@ -17,6 +18,7 @@ public class GameController {
     @FXML private Label lblPalabra;
     @FXML private TilePane panelLetras;
     @FXML private Label lblVidas;
+    @FXML private Label lblPuntos;
     @FXML private TextArea areaLog;
 
     private ClientTCP cliente;
@@ -43,7 +45,14 @@ public class GameController {
 
                     if (data == null) break;
 
-                    if (data instanceof EstadoPartida) {
+                    if (data instanceof String && ((String) data).startsWith("PUNTUACION:")) {
+                        String pts = ((String) data).split(":")[1];
+                        Platform.runLater(() -> {
+                            lblPuntos.setText(pts);
+                            mostrarAlerta("Puntuación Global", "Tu puntuación total acumulada es: " + pts);
+                        });
+                    }
+                    else if (data instanceof EstadoPartida) {
                         EstadoPartida estado = (EstadoPartida) data;
 
                         this.miTurno = estado.isEsTuTurno();
@@ -58,7 +67,7 @@ public class GameController {
                                 panelLetras.setDisable(true);
                             } else {
                                 if (estado.isEsTuTurno()) {
-                                    agregarLog("SISTEMA", "Es tu turno. Elige una letra.");
+                                    agregarLog("SISTEMA", "Es tu turno. Elige una letra o consulta puntuación.");
                                 } else {
                                     agregarLog("SISTEMA", "Turno del oponente...");
                                 }
@@ -86,11 +95,30 @@ public class GameController {
 
         cliente.enviarDatos(letra.charAt(0));
     }
+
     @FXML
     public void pulsarCancelar() {
         cliente.enviarDatos("CANCELAR");
         AppShell.getInstance().loadView(edu.pmoc.practicatrim.hangmanpsp.util.View.LOGIN);
     }
+
+    @FXML
+    public void mostrarPuntuacion(ActionEvent event) {
+        if (miTurno) {
+            cliente.enviarDatos("PUNTUACION");
+        } else {
+            agregarLog("SISTEMA", "Espera a tu turno para consultar la puntuación.");
+        }
+    }
+
+    private void mostrarAlerta(String titulo, String contenido) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(titulo);
+        alert.setHeaderText(null);
+        alert.setContentText(contenido);
+        alert.showAndWait();
+    }
+
     public void agregarLog(String emisor, String mensaje) {
         areaLog.appendText("[" + emisor + "]: " + mensaje + "\n");
     }

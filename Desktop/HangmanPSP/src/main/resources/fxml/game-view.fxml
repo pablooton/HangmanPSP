@@ -7,7 +7,6 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.TilePane?>
-<?import javafx.scene.layout.Priority?>
 
 <HBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -63,8 +62,8 @@
         </TilePane>
 
         <HBox alignment="CENTER" spacing="20">
-            <Button text="Nueva Partida" style="-fx-font-size: 14px; -fx-background-color: #4CAF50; -fx-text-fill: white;"/>
-            <Button text="Salir" style="-fx-font-size: 14px; -fx-background-color: #f44336; -fx-text-fill: white;"/>
+            <Button text="Mostrar Puntuación" onAction="#mostrarPuntuacion" style="-fx-font-size: 14px; -fx-background-color: #1976D2; -fx-text-fill: white;"/>
+            <Button text="Cancelar Partida" onAction="#pulsarCancelar" style="-fx-font-size: 14px; -fx-background-color: #f44336; -fx-text-fill: white;"/>
         </HBox>
     </VBox>
 

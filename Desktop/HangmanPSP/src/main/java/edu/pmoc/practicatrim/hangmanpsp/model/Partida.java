@@ -15,7 +15,7 @@ public class Partida implements Serializable {
 
     @ManyToOne
     @JoinColumn(name = "jugador_id")
-    private transient Jugador jugador;
+    private Jugador jugador;
 
     @Column(name = "fecha_partida")
     private LocalDateTime fechaHora = LocalDateTime.now();
@@ -27,34 +27,15 @@ public class Partida implements Serializable {
     private int puntuacionObtenida;
 
     public Partida() {}
-    public int getId() {
-        return id;
-    }
-    public void setId(int id) {
-        this.id = id;
-    }
-    public Jugador getJugador() {
-        return jugador;
-    }
-    public void setJugador(Jugador jugador) {
-        this.jugador = jugador;
-    }
-    public LocalDateTime getFechaHora() {
-        return fechaHora;
-    }
-    public void setFechaHora(LocalDateTime fechaHora) {
-        this.fechaHora = fechaHora;
-    }
-    public boolean isAcertado() {
-        return acertado;
-    }
-    public void setAcertado(boolean acertado) {
-        this.acertado = acertado;
-    }
-    public int getPuntuacionObtenida() {
-        return puntuacionObtenida;
-    }
-    public void setPuntuacionObtenida(int puntuacionObtenida) {
-        this.puntuacionObtenida = puntuacionObtenida;
-    }
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public Jugador getJugador() { return jugador; }
+    public void setJugador(Jugador jugador) { this.jugador = jugador; }
+    public LocalDateTime getFechaHora() { return fechaHora; }
+    public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
+    public boolean isAcertado() { return acertado; }
+    public void setAcertado(boolean acertado) { this.acertado = acertado; }
+    public int getPuntuacionObtenida() { return puntuacionObtenida; }
+    public void setPuntuacionObtenida(int puntuacionObtenida) { this.puntuacionObtenida = puntuacionObtenida; }
 }

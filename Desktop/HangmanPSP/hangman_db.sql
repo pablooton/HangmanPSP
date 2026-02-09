@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS jugadores (
 
 CREATE TABLE IF NOT EXISTS partidas (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    jugador_id INT,
+    jugador_id INT NOT NULL,
     fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
     acertado BOOLEAN,
     puntuacion_obtenida INT,
