@@ -27,12 +27,15 @@ public class LoginController implements Initializable {
         try {
             Jugador jugador = usuarioDao.cargarUser(nombreUsuario);
 
-            // Iniciar conexion SSL
             ClientTCP cliente = new ClientTCP();
             cliente.conectar();
-            // Navegacion
-            AppShell.getInstance().loadView(View.GAME);
 
+            cliente.enviarDatos(jugador);
+
+            AppShell.getInstance().setCliente(cliente);
+            AppShell.getInstance().setJugador(jugador);
+
+            AppShell.getInstance().loadView(View.GAME);
 
         } catch (Exception e) {
             System.err.println("Error en el proceso de Login: " + e.getMessage());

@@ -1,6 +1,7 @@
 package edu.pmoc.practicatrim.hangmanpsp.network.server;
 
 import edu.pmoc.practicatrim.hangmanpsp.dao.PartidaDAO;
+import edu.pmoc.practicatrim.hangmanpsp.model.EstadoPartida;
 import edu.pmoc.practicatrim.hangmanpsp.model.Jugador;
 import edu.pmoc.practicatrim.hangmanpsp.model.Partida;
 import java.io.*;
@@ -25,13 +26,11 @@ public class HiloCliente implements Runnable {
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
 
-
             Jugador jugador = (Jugador) in.readObject();
-            System.out.println("[CONSOLA] Jugador " + idPropio + " es " + jugador.getNombre());
-
+            System.out.println("[CONSOLA] Jugador " + idPropio + " conectado: " + jugador.getNombre());
 
             while (partida.isActiva()) {
-                enviarEstadoACliente();
+                enviarEstado(false, null);
 
                 if (partida.getTurnoActual() == idPropio) {
                     Object msg = in.readObject();
@@ -48,7 +47,6 @@ public class HiloCliente implements Runnable {
                     }
                 }
             }
-
             finalizarJuego(jugador);
 
         } catch (Exception e) {
@@ -59,10 +57,16 @@ public class HiloCliente implements Runnable {
         }
     }
 
-    private void enviarEstadoACliente() throws IOException {
-        out.writeObject(partida.getProgreso());
-        out.writeInt(partida.getVidas(idPropio));
-        out.writeBoolean(partida.getTurnoActual() == idPropio);
+    private void enviarEstado(boolean terminado, String msgFinal) throws IOException {
+        EstadoPartida estado = new EstadoPartida(
+                partida.getProgreso(),
+                partida.getVidas(idPropio),
+                partida.getTurnoActual() == idPropio,
+                terminado,
+                msgFinal
+        );
+
+        out.writeObject(estado);
         out.flush();
         out.reset();
     }
@@ -72,7 +76,6 @@ public class HiloCliente implements Runnable {
 
         if (ganado && !partida.isCancelada() && partida.getTurnoActual() == idPropio) {
             int puntos = partida.calcularPuntos();
-
             Partida p = new Partida();
             p.setJugador(j);
             p.setAcertado(true);
@@ -80,11 +83,8 @@ public class HiloCliente implements Runnable {
             p.setFechaHora(java.time.LocalDateTime.now());
 
             new PartidaDAO().guardarPartida(p);
-            System.out.println("[CONSOLA] Puntos guardados para: " + j.getNombre());
         }
-
-        out.writeObject("FIN");
-        out.flush();
+        enviarEstado(true, "FIN");
     }
 
     private void desconectar() {

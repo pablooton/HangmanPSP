@@ -3,9 +3,7 @@ package edu.pmoc.practicatrim.hangmanpsp.network.client;
 import edu.pmoc.practicatrim.hangmanpsp.util.ConfigLoader;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 
 public class ClientTCP {
     private SSLSocket socket;
@@ -15,11 +13,6 @@ public class ClientTCP {
     public void conectar() {
         String trustStorePath = ConfigLoader.getProperty("ssl.truststore.path");
         String trustStorePass = ConfigLoader.getProperty("ssl.truststore.pass");
-
-        if (trustStorePath == null || trustStorePass == null) {
-            System.err.println("ERROR: No se han configurado las propiedades del TrustStore en config.properties");
-            return;
-        }
 
         System.setProperty("javax.net.ssl.trustStore", trustStorePath);
         System.setProperty("javax.net.ssl.trustStorePassword", trustStorePass);
@@ -31,11 +24,8 @@ public class ClientTCP {
             SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             socket = (SSLSocket) sslSocketFactory.createSocket(host, port);
 
-
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
-
-            System.out.println("Conexión SSL establecida con el servidor.");
 
         } catch (IOException e) {
             System.err.println("Error al conectar: " + e.getMessage());
@@ -47,6 +37,7 @@ public class ClientTCP {
             if (out != null) {
                 out.writeObject(datos);
                 out.flush();
+                out.reset();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -67,8 +58,6 @@ public class ClientTCP {
     public void desconectar() {
         try {
             if (socket != null) socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) { e.printStackTrace(); }
     }
 }
