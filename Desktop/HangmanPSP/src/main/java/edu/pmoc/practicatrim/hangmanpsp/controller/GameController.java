@@ -42,48 +42,44 @@ public class GameController {
             try {
                 while (true) {
                     Object data = cliente.recibirDatos();
-
                     if (data == null) break;
 
                     if (data instanceof String && ((String) data).startsWith("PUNTUACION:")) {
-                        String pts = ((String) data).split(":")[1];
+                        final String pts = ((String) data).split(":")[1];
                         Platform.runLater(() -> {
                             lblPuntos.setText(pts);
-                            mostrarAlerta("Puntuación Global", "Tu puntuación total acumulada es: " + pts);
+                            mostrarAlerta("Puntuación Global", "Tu puntuación acumulada es: " + pts);
                         });
                     }
+
                     else if (data instanceof EstadoPartida) {
                         EstadoPartida estado = (EstadoPartida) data;
-
                         this.miTurno = estado.isEsTuTurno();
 
                         Platform.runLater(() -> {
-                            String nuevoProgreso = estado.getProgreso().replace("", " ").trim();
-                            String progresoAnterior = lblPalabra.getText().replace(" ", "");
-                            String progresoNuevoSinEspacios = estado.getProgreso();
+                            String progresoLimpio = estado.getProgreso().trim();
+                            String textoActual = lblPalabra.getText().replace(" ", "");
 
-                            if (!progresoAnterior.isEmpty() &&
-                                    !progresoAnterior.contains("_") &&
-                                    progresoNuevoSinEspacios.contains("_")) {
-
-                                panelLetras.getChildren().forEach(node -> node.setDisable(false));
-                                agregarLog("SISTEMA", "¡Palabra acertada! Cargando siguiente ronda...");
+                            if (!progresoLimpio.equals(textoActual) && progresoLimpio.contains("_")) {
+                                if (progresoLimpio.chars().allMatch(c -> c == '_' || c == ' ')) {
+                                    resetearBotonesTeclado();
+                                    agregarLog("SISTEMA", "¡Nueva palabra cargada!");
+                                }
                             }
 
-                            lblPalabra.setText(nuevoProgreso);
+                            lblPalabra.setText(estado.getProgreso().replace("", " ").trim());
                             lblVidas.setText(String.valueOf(estado.getVidas()));
 
                             if (estado.isJuegoTerminado()) {
                                 panelLetras.setDisable(true);
-                                agregarLog("SISTEMA", "Partida finalizada: " + estado.getMensaje());
+                                agregarLog("SISTEMA", "Fin: " + estado.getMensaje());
                             } else {
                                 panelLetras.setDisable(!estado.isEsTuTurno());
 
-
                                 if (estado.isEsTuTurno()) {
-                                    agregarLog("SISTEMA", "¡Es tu turno! Elige una letra.");
+                                    agregarLog("SISTEMA", "Es tu turno. Selecciona una letra.");
                                 } else {
-                                    agregarLog("SISTEMA", "Esperando jugada del oponente...");
+                                    agregarLog("SISTEMA", "Turno del oponente...");
                                 }
                             }
                         });
@@ -92,7 +88,7 @@ public class GameController {
                     }
                 }
             } catch (Exception e) {
-                Platform.runLater(() -> agregarLog("SISTEMA", "Conexión perdida con el servidor."));
+                Platform.runLater(() -> agregarLog("SISTEMA", "Error de red: " + e.getMessage()));
                 e.printStackTrace();
             }
         });
@@ -136,5 +132,12 @@ public class GameController {
 
     public void agregarLog(String emisor, String mensaje) {
         areaLog.appendText("[" + emisor + "]: " + mensaje + "\n");
+    }
+    private void resetearBotonesTeclado() {
+        panelLetras.getChildren().forEach(nodo -> {
+            if (nodo instanceof Button) {
+                nodo.setDisable(false);
+            }
+        });
     }
 }
