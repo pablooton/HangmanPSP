@@ -8,25 +8,14 @@ import org.hibernate.Transaction;
 import org.hibernate.query.Query; // Import necesario si usas consultas
 
 public class PartidaDAO {
-
     public void guardarPartida(Partida partida) {
-        Transaction tx = null;
+        Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            tx = session.beginTransaction();
-
-            if (partida.getJugador() != null) {
-                Jugador jugadorManaged = session.find(Jugador.class, partida.getJugador().getId());
-                partida.setJugador(jugadorManaged);
-            }
-
+            transaction = session.beginTransaction();
             session.persist(partida);
-            tx.commit();
-            System.out.println("Partida guardada correctamente con Jugador ID: " +
-                    (partida.getJugador() != null ? partida.getJugador().getId() : "NULL"));
-
+            transaction.commit();
         } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            System.err.println("Error al guardar la partida: " + e.getMessage());
+            if (transaction != null) transaction.rollback();
             e.printStackTrace();
         }
     }

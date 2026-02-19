@@ -56,7 +56,9 @@ public class LogicaPartida {
             }
         }
     }
-
+    public String getPalabraSecreta() {
+        return palabraSecreta;
+    }
     public String getProgreso() { return progreso; }
     public int getVidas(int id) { return vidasJugadores.getOrDefault(id, 0); }
     public int getTurnoActual() { return turnoActual; }

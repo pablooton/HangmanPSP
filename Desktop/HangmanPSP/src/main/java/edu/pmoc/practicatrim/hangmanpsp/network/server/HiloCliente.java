@@ -4,6 +4,8 @@ import edu.pmoc.practicatrim.hangmanpsp.dao.PalabraDao;
 import edu.pmoc.practicatrim.hangmanpsp.dao.PartidaDAO;
 import edu.pmoc.practicatrim.hangmanpsp.model.EstadoPartida;
 import edu.pmoc.practicatrim.hangmanpsp.model.Jugador;
+import edu.pmoc.practicatrim.hangmanpsp.model.Partida;
+
 import java.io.*;
 import javax.net.ssl.SSLSocket;
 
@@ -26,6 +28,7 @@ public class HiloCliente implements Runnable {
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
             this.jugador = (Jugador) in.readObject();
+            System.out.println("Jugador conectado: " + jugador.getNombre());
 
             while (partida.isActiva()) {
                 enviarEstado();
@@ -42,15 +45,25 @@ public class HiloCliente implements Runnable {
                 Object msg = in.readObject();
 
                 if (msg instanceof Character) {
-                    partida.procesarJugada(idPropio, (Character) msg);
-
+                    char letra = (Character) msg;
+                    partida.procesarJugada(idPropio, letra);
                     if (!partida.getProgreso().contains("_")) {
+                        int puntos = (partida.getPalabraSecreta().length() < 10) ? 1 : 2;
+                        registrarResultadoEnBD(true, puntos);
+
                         String nueva = PalabraDao.getPalabraSecreta();
                         synchronized (partida) {
                             partida.iniciarNuevaRonda(nueva);
                             partida.notifyAll();
                         }
-                    } else {
+                    }
+                    else if (!partida.isActiva()) {
+                        registrarResultadoEnBD(false, 0);
+                        synchronized (partida) {
+                            partida.notifyAll();
+                        }
+                    }
+                    else {
                         synchronized (partida) {
                             partida.notifyAll();
                         }
@@ -59,8 +72,8 @@ public class HiloCliente implements Runnable {
                 else if (msg instanceof String) {
                     String texto = (String) msg;
                     if ("PUNTUACION".equals(texto)) {
-                        long puntos = new PartidaDAO().obtenerPuntuacionTotal(jugador.getId());
-                        out.writeObject("PUNTUACION:" + puntos);
+                        long puntosTotales = new PartidaDAO().obtenerPuntuacionTotal(jugador.getId());
+                        out.writeObject("PUNTUACION:" + puntosTotales);
                         out.flush();
                     } else if ("CANCELAR".equals(texto)) {
                         partida.cancelarPartida();
@@ -75,6 +88,21 @@ public class HiloCliente implements Runnable {
         }
     }
 
+    private void registrarResultadoEnBD(boolean victoria, int puntos) {
+        try {
+            Partida record = new Partida();
+            record.setJugador(this.jugador);
+            record.setAcertado(victoria);
+            record.setPuntuacionObtenida(puntos);
+
+            PartidaDAO dao = new PartidaDAO();
+            dao.guardarPartida(record);
+
+            System.out.println("[Hibernate] Partida registrada para " + jugador.getNombre() + ": " + puntos + " puntos.");
+        } catch (Exception e) {
+            System.err.println("Error al persistir datos: " + e.getMessage());
+        }
+    }
     private void enviarEstado() throws IOException {
         if (socket.isClosed()) return;
         EstadoPartida ep = new EstadoPartida(
