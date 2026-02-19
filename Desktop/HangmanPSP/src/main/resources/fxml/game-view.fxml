@@ -62,8 +62,15 @@
         </TilePane>
 
         <HBox alignment="CENTER" spacing="20">
-            <Button text="Mostrar Puntuación" onAction="#mostrarPuntuacion" style="-fx-font-size: 14px; -fx-background-color: #1976D2; -fx-text-fill: white;"/>
-            <Button text="Cancelar Partida" onAction="#pulsarCancelar" style="-fx-font-size: 14px; -fx-background-color: #f44336; -fx-text-fill: white;"/>
+            <Button text="Mostrar Puntuación" onAction="#mostrarPuntuacion"
+                    style="-fx-font-size: 14px; -fx-background-color: #1976D2; -fx-text-fill: white;"/>
+
+            <Button text="Cancelar Partida" onAction="#pulsarCancelar"
+                    style="-fx-font-size: 14px; -fx-background-color: #f44336; -fx-text-fill: white;"/>
+
+            <Button fx:id="btnVolver" text="Volver al Menú" onAction="#volverAlMenu"
+                    visible="false" managed="false"
+                    style="-fx-font-size: 14px; -fx-background-color: #4CAF50; -fx-text-fill: white;"/>
         </HBox>
     </VBox>
 

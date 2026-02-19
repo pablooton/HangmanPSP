@@ -4,6 +4,7 @@ import edu.pmoc.practicatrim.hangmanpsp.util.ConfigLoader;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
+import java.net.SocketException;
 
 public class ClientTCP {
     private SSLSocket socket;
@@ -34,13 +35,13 @@ public class ClientTCP {
 
     public void enviarDatos(Object datos) {
         try {
-            if (out != null) {
+            if (out != null && socket != null && !socket.isClosed()) {
                 out.writeObject(datos);
                 out.flush();
                 out.reset();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("[INFO] No se pudo enviar datos: Conexión cerrada.");
         }
     }
 
@@ -49,8 +50,10 @@ public class ClientTCP {
             if (in != null) {
                 return in.readObject();
             }
+        } catch (EOFException | SocketException e) {
+            return null;
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            System.err.println("Error en recepción de datos: " + e.getMessage());
         }
         return null;
     }

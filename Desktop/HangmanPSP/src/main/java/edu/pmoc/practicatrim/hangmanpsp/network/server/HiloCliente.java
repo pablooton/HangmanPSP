@@ -7,6 +7,7 @@ import edu.pmoc.practicatrim.hangmanpsp.model.Jugador;
 import edu.pmoc.practicatrim.hangmanpsp.model.Partida;
 
 import java.io.*;
+import java.net.SocketException;
 import javax.net.ssl.SSLSocket;
 
 public class HiloCliente implements Runnable {
@@ -28,61 +29,60 @@ public class HiloCliente implements Runnable {
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
             this.jugador = (Jugador) in.readObject();
-            System.out.println("Jugador conectado: " + jugador.getNombre());
 
-            while (partida.isActiva()) {
+            while (!socket.isClosed()) {
                 enviarEstado();
+
+                if (!partida.isActiva()) break;
 
                 synchronized (partida) {
                     while (partida.getTurnoActual() != idPropio && partida.isActiva()) {
                         partida.wait();
-                        enviarEstado();
+                        if (!socket.isClosed()) enviarEstado();
                     }
                 }
 
                 if (!partida.isActiva()) break;
 
-                Object msg = in.readObject();
+                try {
+                    Object msg = in.readObject();
 
-                if (msg instanceof Character) {
-                    char letra = (Character) msg;
-                    partida.procesarJugada(idPropio, letra);
-                    if (!partida.getProgreso().contains("_")) {
-                        int puntos = (partida.getPalabraSecreta().length() < 10) ? 1 : 2;
-                        registrarResultadoEnBD(true, puntos);
+                    if (msg instanceof Character) {
+                        char letra = (Character) msg;
 
-                        String nueva = PalabraDao.getPalabraSecreta();
                         synchronized (partida) {
-                            partida.iniciarNuevaRonda(nueva);
+                            partida.procesarJugada(idPropio, letra);
+
+                            if (!partida.getProgreso().contains("_")) {
+                                int puntos = (partida.getPalabraSecreta().length() < 10) ? 1 : 2;
+                                registrarResultadoEnBD(true, puntos);
+                                String nueva = PalabraDao.getPalabraSecreta();
+                                partida.iniciarNuevaRonda(nueva);
+                            } else if (!partida.isActiva()) {
+                                registrarResultadoEnBD(false, 0);
+                            }
                             partida.notifyAll();
                         }
-                    }
-                    else if (!partida.isActiva()) {
-                        registrarResultadoEnBD(false, 0);
-                        synchronized (partida) {
-                            partida.notifyAll();
+                    } else if (msg instanceof String) {
+                        String texto = (String) msg;
+                        if ("PUNTUACION".equals(texto)) {
+                            long puntos = new PartidaDAO().obtenerPuntuacionTotal(jugador.getId());
+                            out.writeObject("PUNTUACION:" + puntos);
+                            out.flush();
+                        } else if ("CANCELAR".equals(texto)) {
+                            partida.cancelarPartida();
+                            synchronized (partida) {
+                                partida.notifyAll();
+                            }
+                            break;
                         }
                     }
-                    else {
-                        synchronized (partida) {
-                            partida.notifyAll();
-                        }
-                    }
-                }
-                else if (msg instanceof String) {
-                    String texto = (String) msg;
-                    if ("PUNTUACION".equals(texto)) {
-                        long puntosTotales = new PartidaDAO().obtenerPuntuacionTotal(jugador.getId());
-                        out.writeObject("PUNTUACION:" + puntosTotales);
-                        out.flush();
-                    } else if ("CANCELAR".equals(texto)) {
-                        partida.cancelarPartida();
-                        synchronized (partida) { partida.notifyAll(); }
-                    }
+                } catch (EOFException | SocketException e) {
+                    break;
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error en HiloCliente " + idPropio + ": " + e.getMessage());
+            System.out.println("Sesion finalizada.");
         } finally {
             desconectar();
         }
@@ -105,12 +105,19 @@ public class HiloCliente implements Runnable {
     }
     private void enviarEstado() throws IOException {
         if (socket.isClosed()) return;
+        String mensaje = "";
+        if (!partida.isActiva()) {
+            mensaje = "PARTIDA FINALIZADA";
+        } else {
+            mensaje = (partida.getTurnoActual() == idPropio) ? "Es tu turno" : "Turno del rival";
+        }
         EstadoPartida ep = new EstadoPartida(
                 partida.getProgreso(),
                 partida.getVidas(idPropio),
                 partida.getTurnoActual() == idPropio,
                 !partida.isActiva(),
-                !partida.isActiva() ? "PARTIDA FINALIZADA" : ""
+                mensaje,
+                partida.getLetrasAcertadas()
         );
         out.writeObject(ep);
         out.flush();

@@ -15,6 +15,7 @@ import javafx.scene.layout.TilePane;
 
 public class GameController {
 
+    @ FXML public Button btnVolver;
     @FXML private Label lblPalabra;
     @FXML private TilePane panelLetras;
     @FXML private Label lblVidas;
@@ -42,7 +43,10 @@ public class GameController {
             try {
                 while (true) {
                     Object data = cliente.recibirDatos();
-                    if (data == null) break;
+
+                    if (data == null) {
+                        break;
+                    }
 
                     if (data instanceof String && ((String) data).startsWith("PUNTUACION:")) {
                         final String pts = ((String) data).split(":")[1];
@@ -51,45 +55,48 @@ public class GameController {
                             mostrarAlerta("Puntuación Global", "Tu puntuación acumulada es: " + pts);
                         });
                     }
-
                     else if (data instanceof EstadoPartida) {
                         EstadoPartida estado = (EstadoPartida) data;
                         this.miTurno = estado.isEsTuTurno();
 
                         Platform.runLater(() -> {
-                            String progresoLimpio = estado.getProgreso().trim();
-                            String textoActual = lblPalabra.getText().replace(" ", "");
-
-                            if (!progresoLimpio.equals(textoActual) && progresoLimpio.contains("_")) {
-                                if (progresoLimpio.chars().allMatch(c -> c == '_' || c == ' ')) {
-                                    resetearBotonesTeclado();
-                                    agregarLog("SISTEMA", "¡Nueva palabra cargada!");
-                                }
-                            }
-
                             lblPalabra.setText(estado.getProgreso().replace("", " ").trim());
                             lblVidas.setText(String.valueOf(estado.getVidas()));
+                            String nuevoMensaje = estado.getMensaje();
+                            if (nuevoMensaje != null && !nuevoMensaje.isEmpty()) {
+                                if (!areaLog.getText().endsWith(nuevoMensaje + "\n")) {
+                                    agregarLog("SISTEMA", nuevoMensaje);
+                                }
+                            }
+                            for (javafx.scene.Node nodo : panelLetras.getChildren()) {
+                                if (nodo instanceof Button) {
+                                    Button boton = (Button) nodo;
+                                    char letraBoton = boton.getText().toUpperCase().charAt(0);
+
+                                    if (estado.getLetrasAcertadas().contains(letraBoton)) {
+                                        boton.setDisable(true);
+                                    } else if (!estado.isJuegoTerminado()) {
+                                        boton.setDisable(!estado.isEsTuTurno());
+                                    }
+                                }
+                            }
 
                             if (estado.isJuegoTerminado()) {
                                 panelLetras.setDisable(true);
-                                agregarLog("SISTEMA", "Fin: " + estado.getMensaje());
+                                btnVolver.setVisible(true);
+                                btnVolver.setManaged(true);
                             } else {
                                 panelLetras.setDisable(!estado.isEsTuTurno());
-
-                                if (estado.isEsTuTurno()) {
-                                    agregarLog("SISTEMA", "Es tu turno. Selecciona una letra.");
-                                } else {
-                                    agregarLog("SISTEMA", "Turno del oponente...");
-                                }
                             }
                         });
 
-                        if (estado.isJuegoTerminado()) break;
+                        if (estado.isJuegoTerminado()) {
+                            break;
+                        }
                     }
                 }
             } catch (Exception e) {
-                Platform.runLater(() -> agregarLog("SISTEMA", "Error de red: " + e.getMessage()));
-                e.printStackTrace();
+                System.out.println("Hilo de escucha cerrado.");
             }
         });
         thread.setDaemon(true);
@@ -109,8 +116,9 @@ public class GameController {
 
     @FXML
     public void pulsarCancelar() {
+        panelLetras.setDisable(true);
         cliente.enviarDatos("CANCELAR");
-        AppShell.getInstance().loadView(edu.pmoc.practicatrim.hangmanpsp.util.View.LOGIN);
+        Platform.runLater(() -> AppShell.getInstance().loadView(edu.pmoc.practicatrim.hangmanpsp.util.View.LOGIN));
     }
 
     @FXML
@@ -139,5 +147,12 @@ public class GameController {
                 nodo.setDisable(false);
             }
         });
+    }
+
+    public void volverAlMenu(ActionEvent actionEvent) {
+        if (cliente != null) {
+            cliente.desconectar();
+        }
+        Platform.runLater(() -> AppShell.getInstance().loadView(edu.pmoc.practicatrim.hangmanpsp.util.View.LOGIN));
     }
 }
