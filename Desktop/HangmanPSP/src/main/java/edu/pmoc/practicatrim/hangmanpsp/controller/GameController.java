@@ -25,6 +25,8 @@ public class GameController {
     private ClientTCP cliente;
     private Jugador jugadorLogueado;
     private boolean miTurno = false;
+    private java.util.Set<Character> misLetrasPulsadas = new java.util.HashSet<>();
+    private int vidasAnteriores = -1;
 
     @FXML
     public void initialize() {
@@ -68,6 +70,11 @@ public class GameController {
                                     agregarLog("SISTEMA", nuevoMensaje);
                                 }
                             }
+                            if (estado.getVidas() == 6 && vidasAnteriores != 6) {
+                                misLetrasPulsadas.clear();
+                            }
+                            vidasAnteriores = estado.getVidas();
+
                             for (javafx.scene.Node nodo : panelLetras.getChildren()) {
                                 if (nodo instanceof Button) {
                                     Button boton = (Button) nodo;
@@ -75,6 +82,9 @@ public class GameController {
 
                                     if (estado.getLetrasAcertadas().contains(letraBoton)) {
                                         boton.setDisable(true);
+                                    } else if (misLetrasPulsadas.contains(letraBoton)) {
+                                        boton.setDisable(true);
+
                                     } else if (!estado.isJuegoTerminado()) {
                                         boton.setDisable(!estado.isEsTuTurno());
                                     }
@@ -111,6 +121,7 @@ public class GameController {
         boton.setDisable(true);
 
         String letra = boton.getText();
+        misLetrasPulsadas.add(letra.charAt(0));
         cliente.enviarDatos(letra.charAt(0));
     }
 

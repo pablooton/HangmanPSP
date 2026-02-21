@@ -13,6 +13,14 @@ public class LogicaPartida {
     private boolean activa = true;
     private Map<Integer, Integer> vidasJugadores = new HashMap<>();
     private List<Character> letrasAcertadas = new ArrayList<>();
+    private boolean ultimoFallo = false;
+    private int jugadorQueFallo = -1;
+
+
+
+    public boolean huboFalloRival(int miId) {
+        return ultimoFallo && jugadorQueFallo != miId;
+    }
 
     public LogicaPartida(String palabra, int numJugadores) {
         this.numJugadores = numJugadores;
@@ -45,12 +53,15 @@ public class LogicaPartida {
 
         if (acierto) {
             progreso = nuevoProgreso.toString();
+            ultimoFallo = false;
             if (!letrasAcertadas.contains(letra)) {
                 letrasAcertadas.add(letra);
             }
         } else {
             int v = vidasJugadores.get(id) - 1;
             vidasJugadores.put(id, v);
+            ultimoFallo = true;
+            jugadorQueFallo = id;
             if (v <= 0) {
                 activa = false;
             } else if (numJugadores == 2) {

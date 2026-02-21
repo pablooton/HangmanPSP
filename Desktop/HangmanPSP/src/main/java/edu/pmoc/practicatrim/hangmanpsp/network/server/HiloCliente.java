@@ -110,6 +110,9 @@ public class HiloCliente implements Runnable {
             mensaje = "PARTIDA FINALIZADA";
         } else {
             mensaje = (partida.getTurnoActual() == idPropio) ? "Es tu turno" : "Turno del rival";
+            if (partida.huboFalloRival(idPropio)) {
+                mensaje = "¡Tu rival ha fallado! " + mensaje;
+            }
         }
         EstadoPartida ep = new EstadoPartida(
                 partida.getProgreso(),
