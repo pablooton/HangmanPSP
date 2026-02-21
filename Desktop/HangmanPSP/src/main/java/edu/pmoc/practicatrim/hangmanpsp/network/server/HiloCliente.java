@@ -109,7 +109,7 @@ public class HiloCliente implements Runnable {
 
         if (!partida.isActiva()) {
             if (partida.estanTodosMuertos()) {
-                mensaje = "AMBOS JUGADORES MUERTOS , LA PALABRA ERA: " + partida.getPalabraSecreta();
+                mensaje = "¡PALABRA FALLADA! LA PALABRA ERA: " + partida.getPalabraSecreta();
             } else {
                 mensaje = "PARTIDA FINALIZADA";
             }
