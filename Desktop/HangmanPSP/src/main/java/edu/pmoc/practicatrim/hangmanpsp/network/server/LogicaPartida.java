@@ -62,10 +62,26 @@ public class LogicaPartida {
             vidasJugadores.put(id, v);
             ultimoFallo = true;
             jugadorQueFallo = id;
-            if (v <= 0) {
+
+            boolean todosMuertos = true;
+            for (int vidasRestantes : vidasJugadores.values()) {
+                if (vidasRestantes > 0) {
+                    todosMuertos = false;
+                    break;
+                }
+            }
+
+            if (todosMuertos) {
                 activa = false;
-            } else if (numJugadores == 2) {
-                this.turnoActual = (this.turnoActual == 0) ? 1 : 0;
+            } else {
+                if (numJugadores == 2) {
+                    int otroJugador = (id == 0) ? 1 : 0;
+                    if (vidasJugadores.get(otroJugador) > 0) {
+                        this.turnoActual = otroJugador;
+                    } else {
+                        this.turnoActual = id;
+                    }
+                }
             }
         }
     }

@@ -106,18 +106,26 @@ public class HiloCliente implements Runnable {
     private void enviarEstado() throws IOException {
         if (socket.isClosed()) return;
         String mensaje = "";
+
         if (!partida.isActiva()) {
             mensaje = "PARTIDA FINALIZADA";
         } else {
-            mensaje = (partida.getTurnoActual() == idPropio) ? "Es tu turno" : "Turno del rival";
-            if (partida.huboFalloRival(idPropio)) {
-                mensaje = "¡Tu rival ha fallado! " + mensaje;
+            if (partida.getVidas(idPropio) <= 0) {
+                mensaje = "Has agotado tus vidas. Espectando a tu rival...";
+            } else {
+                mensaje = (partida.getTurnoActual() == idPropio) ? "Es tu turno" : "Turno del rival";
+                if (partida.huboFalloRival(idPropio)) {
+                    mensaje = "¡Tu rival ha fallado! " + mensaje;
+                }
             }
         }
+
+        boolean miTurnoReal = (partida.getTurnoActual() == idPropio) && (partida.getVidas(idPropio) > 0);
+
         EstadoPartida ep = new EstadoPartida(
                 partida.getProgreso(),
                 partida.getVidas(idPropio),
-                partida.getTurnoActual() == idPropio,
+                miTurnoReal,
                 !partida.isActiva(),
                 mensaje,
                 partida.getLetrasAcertadas()
