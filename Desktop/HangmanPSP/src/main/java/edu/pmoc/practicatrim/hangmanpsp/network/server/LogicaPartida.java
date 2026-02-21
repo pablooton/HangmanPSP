@@ -18,6 +18,15 @@ public class LogicaPartida {
 
 
 
+    public boolean estanTodosMuertos() {
+        for (int vidasRestantes : vidasJugadores.values()) {
+            if (vidasRestantes > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean huboFalloRival(int miId) {
         return ultimoFallo && jugadorQueFallo != miId;
     }
