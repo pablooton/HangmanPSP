@@ -1,21 +1,22 @@
 package edu.pmoc.practicatrim.hangmanpsp.controller;
 
 import edu.pmoc.practicatrim.hangmanpsp.model.EstadoPartida;
-import edu.pmoc.practicatrim.hangmanpsp.model.Jugador;
 import edu.pmoc.practicatrim.hangmanpsp.network.client.ClientTCP;
 import edu.pmoc.practicatrim.hangmanpsp.util.AppShell;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.TilePane;
+import java.util.HashSet;
+import java.util.Set;
 
 public class GameController {
 
-    @ FXML public Button btnVolver;
+    @FXML public Button btnVolver;
     @FXML private Label lblPalabra;
     @FXML private TilePane panelLetras;
     @FXML private Label lblVidas;
@@ -23,144 +24,83 @@ public class GameController {
     @FXML private TextArea areaLog;
 
     private ClientTCP cliente;
-    private Jugador jugadorLogueado;
+    private Set<Character> misLetrasPulsadas = new HashSet<>();
     private boolean miTurno = false;
-    private java.util.Set<Character> misLetrasPulsadas = new java.util.HashSet<>();
-    private int vidasAnteriores = -1;
 
     @FXML
     public void initialize() {
         this.cliente = AppShell.getInstance().getCliente();
-        this.jugadorLogueado = AppShell.getInstance().getJugador();
-
-        if (cliente != null) {
-            iniciarHiloEscucha();
-        } else {
-            agregarLog("SISTEMA", "Error: No hay conexión con el servidor.");
-        }
+        btnVolver.setVisible(false);
+        btnVolver.setManaged(false);
+        if (cliente != null) iniciarHiloEscucha();
     }
 
     private void iniciarHiloEscucha() {
-        Thread thread = new Thread(() -> {
+        new Thread(() -> {
             try {
                 while (true) {
                     Object data = cliente.recibirDatos();
-
-                    if (data == null) {
-                        break;
-                    }
-
                     if (data instanceof String && ((String) data).startsWith("PUNTUACION:")) {
-                        final String pts = ((String) data).split(":")[1];
-                        Platform.runLater(() -> {
-                            lblPuntos.setText(pts);
-                            mostrarAlerta("Puntuación Global", "Tu puntuación acumulada es: " + pts);
-                        });
-                    }
-                    else if (data instanceof EstadoPartida) {
-                        EstadoPartida estado = (EstadoPartida) data;
-                        this.miTurno = estado.isEsTuTurno();
-
-                        Platform.runLater(() -> {
-                            lblPalabra.setText(estado.getProgreso().replace("", " ").trim());
-                            lblVidas.setText(String.valueOf(estado.getVidas()));
-                            String nuevoMensaje = estado.getMensaje();
-                            if (nuevoMensaje != null && !nuevoMensaje.isEmpty()) {
-                                if (!areaLog.getText().endsWith(nuevoMensaje + "\n")) {
-                                    agregarLog("SISTEMA", nuevoMensaje);
-                                }
-                            }
-                            if (estado.getVidas() == 6 && vidasAnteriores != 6) {
-                                misLetrasPulsadas.clear();
-                            }
-                            vidasAnteriores = estado.getVidas();
-
-                            for (javafx.scene.Node nodo : panelLetras.getChildren()) {
-                                if (nodo instanceof Button) {
-                                    Button boton = (Button) nodo;
-                                    char letraBoton = boton.getText().toUpperCase().charAt(0);
-
-                                    if (estado.getLetrasAcertadas().contains(letraBoton)) {
-                                        boton.setDisable(true);
-                                    } else if (misLetrasPulsadas.contains(letraBoton)) {
-                                        boton.setDisable(true);
-
-                                    } else if (!estado.isJuegoTerminado()) {
-                                        boton.setDisable(!estado.isEsTuTurno());
-                                    }
-                                }
-                            }
-
-                            if (estado.isJuegoTerminado()) {
-                                panelLetras.setDisable(true);
-                                btnVolver.setVisible(true);
-                                btnVolver.setManaged(true);
-                            } else {
-                                panelLetras.setDisable(!estado.isEsTuTurno());
-                            }
-                        });
-
-                        if (estado.isJuegoTerminado()) {
-                            break;
-                        }
-                    }
+                        String pts = ((String) data).split(":")[1];
+                        Platform.runLater(() -> lblPuntos.setText(pts));
+                    } else if (data instanceof EstadoPartida estado) {
+                        Platform.runLater(() -> actualizarUI(estado));
+                        if (estado.isJuegoTerminado()) break;
+                    } else if (data == null) break;
                 }
-            } catch (Exception e) {
-                System.out.println("Hilo de escucha cerrado.");
+            } catch (Exception e) {}
+        }).start();
+    }
+
+    private void actualizarUI(EstadoPartida estado) {
+        if (estado.getLetrasAcertadas().isEmpty() && !misLetrasPulsadas.isEmpty()) {
+            misLetrasPulsadas.clear();
+        }
+
+        lblPalabra.setText(estado.getProgreso().replace("", " ").trim());
+        lblVidas.setText(String.valueOf(estado.getVidas()));
+        if (estado.getMensaje() != null) areaLog.appendText("[SISTEMA]: " + estado.getMensaje() + "\n");
+
+        if (estado.isJuegoTerminado()) {
+            panelLetras.setDisable(true);
+            btnVolver.setVisible(true);
+            btnVolver.setManaged(true);
+        } else {
+            this.miTurno = estado.isEsTuTurno();
+            panelLetras.setDisable(!miTurno);
+            for (Node n : panelLetras.getChildren()) {
+                if (n instanceof Button b) {
+                    char l = b.getText().toUpperCase().charAt(0);
+                    b.setDisable(estado.getLetrasAcertadas().contains(l) || misLetrasPulsadas.contains(l) || !miTurno);
+                }
             }
-        });
-        thread.setDaemon(true);
-        thread.start();
+        }
     }
 
     @FXML
     public void pulsarLetra(ActionEvent event) {
         if (!miTurno) return;
-
-        Button boton = (Button) event.getSource();
-        boton.setDisable(true);
-
-        String letra = boton.getText();
-        misLetrasPulsadas.add(letra.charAt(0));
-        cliente.enviarDatos(letra.charAt(0));
+        Button b = (Button) event.getSource();
+        char l = b.getText().toUpperCase().charAt(0);
+        b.setDisable(true);
+        misLetrasPulsadas.add(l);
+        cliente.enviarDatos(l);
     }
 
     @FXML
     public void pulsarCancelar() {
-        panelLetras.setDisable(true);
         cliente.enviarDatos("CANCELAR");
-        Platform.runLater(() -> AppShell.getInstance().loadView(edu.pmoc.practicatrim.hangmanpsp.util.View.LOGIN));
     }
 
     @FXML
     public void mostrarPuntuacion(ActionEvent event) {
-        if (miTurno) {
+        if (cliente != null) {
             cliente.enviarDatos("PUNTUACION");
-        } else {
-            agregarLog("SISTEMA", "Espera a tu turno para consultar la puntuación.");
         }
     }
 
-    private void mostrarAlerta(String titulo, String contenido) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(titulo);
-        alert.setHeaderText(null);
-        alert.setContentText(contenido);
-        alert.showAndWait();
-    }
-
-    public void agregarLog(String emisor, String mensaje) {
-        areaLog.appendText("[" + emisor + "]: " + mensaje + "\n");
-    }
-    private void resetearBotonesTeclado() {
-        panelLetras.getChildren().forEach(nodo -> {
-            if (nodo instanceof Button) {
-                nodo.setDisable(false);
-            }
-        });
-    }
-
-    public void volverAlMenu(ActionEvent actionEvent) {
+    @FXML
+    public void volverAlMenu(ActionEvent event) {
         if (cliente != null) {
             cliente.desconectar();
         }

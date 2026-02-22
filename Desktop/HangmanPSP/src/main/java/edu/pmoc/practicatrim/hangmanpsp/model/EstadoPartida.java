@@ -5,7 +5,6 @@ import java.util.List;
 
 public class EstadoPartida implements Serializable {
     private static final long serialVersionUID = 1L;
-
     private String progreso;
     private int vidas;
     private boolean esTuTurno;

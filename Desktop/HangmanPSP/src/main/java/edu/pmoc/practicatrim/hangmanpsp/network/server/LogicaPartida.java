@@ -16,21 +16,6 @@ public class LogicaPartida {
     private boolean ultimoFallo = false;
     private int jugadorQueFallo = -1;
 
-
-
-    public boolean estanTodosMuertos() {
-        for (int vidasRestantes : vidasJugadores.values()) {
-            if (vidasRestantes > 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public boolean huboFalloRival(int miId) {
-        return ultimoFallo && jugadorQueFallo != miId;
-    }
-
     public LogicaPartida(String palabra, int numJugadores) {
         this.numJugadores = numJugadores;
         iniciarNuevaRonda(palabra);
@@ -41,14 +26,15 @@ public class LogicaPartida {
         this.progreso = "_".repeat(palabraSecreta.length());
         this.letrasAcertadas.clear();
         for (int i = 0; i < numJugadores; i++) {
-            vidasJugadores.put(i, 6);
+            vidasJugadores.put(i, palabraSecreta.length() / 2);
         }
         this.activa = true;
+        this.ultimoFallo = false;
+        this.jugadorQueFallo = -1;
     }
 
     public synchronized void procesarJugada(int id, char letra) {
         if (id != turnoActual || !activa) return;
-
         letra = Character.toUpperCase(letra);
         boolean acierto = false;
         StringBuilder nuevoProgreso = new StringBuilder(progreso);
@@ -72,27 +58,32 @@ public class LogicaPartida {
             ultimoFallo = true;
             jugadorQueFallo = id;
 
-            boolean todosMuertos = true;
-            for (int vidasRestantes : vidasJugadores.values()) {
-                if (vidasRestantes > 0) {
-                    todosMuertos = false;
-                    break;
-                }
-            }
-
-            if (todosMuertos) {
+            if (estanTodosMuertos()) {
                 activa = false;
             } else {
                 if (numJugadores == 2) {
                     int otroJugador = (id == 0) ? 1 : 0;
                     if (vidasJugadores.get(otroJugador) > 0) {
                         this.turnoActual = otroJugador;
-                    } else {
-                        this.turnoActual = id;
                     }
                 }
             }
         }
+    }
+
+    public boolean estanTodosMuertos() {
+        for (int v : vidasJugadores.values()) {
+            if (v > 0) return false;
+        }
+        return true;
+    }
+
+    public boolean esPalabraAdivinada() {
+        return !progreso.contains("_");
+    }
+
+    public boolean huboFalloRival(int miId) {
+        return ultimoFallo && jugadorQueFallo != miId;
     }
 
     public List<Character> getLetrasAcertadas() { return letrasAcertadas; }

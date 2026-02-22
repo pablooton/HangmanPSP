@@ -5,7 +5,6 @@ import edu.pmoc.practicatrim.hangmanpsp.dao.PartidaDAO;
 import edu.pmoc.practicatrim.hangmanpsp.model.EstadoPartida;
 import edu.pmoc.practicatrim.hangmanpsp.model.Jugador;
 import edu.pmoc.practicatrim.hangmanpsp.model.Partida;
-
 import java.io.*;
 import java.net.SocketException;
 import javax.net.ssl.SSLSocket;
@@ -27,7 +26,6 @@ public class HiloCliente implements Runnable {
             out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-
             this.jugador = (Jugador) in.readObject();
 
             while (!socket.isClosed()) {
@@ -46,13 +44,10 @@ public class HiloCliente implements Runnable {
 
                 try {
                     Object msg = in.readObject();
-
                     if (msg instanceof Character) {
                         char letra = (Character) msg;
-
                         synchronized (partida) {
                             partida.procesarJugada(idPropio, letra);
-
                             if (!partida.getProgreso().contains("_")) {
                                 int puntos = (partida.getPalabraSecreta().length() < 10) ? 1 : 2;
                                 registrarResultadoEnBD(true, puntos);
@@ -74,7 +69,8 @@ public class HiloCliente implements Runnable {
                             synchronized (partida) {
                                 partida.notifyAll();
                             }
-                            break;
+                            // No hacemos break aquí para que el ciclo termine
+                            // y se limpie en el siguiente flujo
                         }
                     }
                 } catch (EOFException | SocketException e) {
@@ -94,28 +90,19 @@ public class HiloCliente implements Runnable {
             record.setJugador(this.jugador);
             record.setAcertado(victoria);
             record.setPuntuacionObtenida(puntos);
-
-            PartidaDAO dao = new PartidaDAO();
-            dao.guardarPartida(record);
-
-            System.out.println("[Hibernate] Partida registrada para " + jugador.getNombre() + ": " + puntos + " puntos.");
-        } catch (Exception e) {
-            System.err.println("Error al persistir datos: " + e.getMessage());
-        }
+            new PartidaDAO().guardarPartida(record);
+        } catch (Exception e) {}
     }
+
     private void enviarEstado() throws IOException {
         if (socket.isClosed()) return;
         String mensaje = "";
 
         if (!partida.isActiva()) {
-            if (partida.estanTodosMuertos()) {
-                mensaje = "¡PALABRA FALLADA! LA PALABRA ERA: " + partida.getPalabraSecreta();
-            } else {
-                mensaje = "PARTIDA FINALIZADA";
-            }
+            mensaje = "PARTIDA FINALIZADA/CANCELADA";
         } else {
             if (partida.getVidas(idPropio) <= 0) {
-                mensaje = "Has agotado tus vidas. Espectando a tu rival...";
+                mensaje = "Sin vidas. Esperando rival...";
             } else {
                 mensaje = (partida.getTurnoActual() == idPropio) ? "Es tu turno" : "Turno del rival";
                 if (partida.huboFalloRival(idPropio)) {
@@ -124,12 +111,10 @@ public class HiloCliente implements Runnable {
             }
         }
 
-        boolean miTurnoReal = (partida.getTurnoActual() == idPropio) && (partida.getVidas(idPropio) > 0);
-
         EstadoPartida ep = new EstadoPartida(
                 partida.getProgreso(),
                 partida.getVidas(idPropio),
-                miTurnoReal,
+                partida.getTurnoActual() == idPropio && partida.isActiva(),
                 !partida.isActiva(),
                 mensaje,
                 partida.getLetrasAcertadas()
@@ -140,8 +125,6 @@ public class HiloCliente implements Runnable {
     }
 
     private void desconectar() {
-        try {
-            if (socket != null && !socket.isClosed()) socket.close();
-        } catch (IOException e) {}
+        try { if (socket != null && !socket.isClosed()) socket.close(); } catch (IOException e) {}
     }
 }
